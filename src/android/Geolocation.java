@@ -156,7 +156,7 @@ public class Geolocation extends CordovaPlugin implements OnLocationResultEventL
         return true;
     }
 
-    private int getAuthorizationStatus() {
+    private int getAuthorization() {
         if (!hasPermission()) {
             // Check if the permission has been requested before.
             if (cordova.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) || cordova.hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)) {
@@ -169,6 +169,11 @@ public class Geolocation extends CordovaPlugin implements OnLocationResultEventL
         } else {
             return 1;
         }
+    }
+    public void getAuthorizationStatus(CallbackContext callbackContext) {
+        int status = getAuthorization();
+        PluginResult result = new PluginResult(PluginResult.Status.OK, status);
+        callbackContext.sendPluginResult(result);
     }
 
     private void getLocation(LocationContext locationContext) {
