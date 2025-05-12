@@ -87,6 +87,8 @@ public class Geolocation extends CordovaPlugin implements OnLocationResultEventL
         } else if ("clearWatch".equals(action)) {
             clearWatch(args, callbackContext);
 
+        } else if ("getAuthorizationStatus".equals(action)) {
+            getAuthorizationStatus(callbackContext);
         } else {
             return false;
         }
