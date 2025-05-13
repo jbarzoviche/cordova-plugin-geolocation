@@ -94,7 +94,6 @@ function createResult (pos) {
 }
 
 module.exports = {
-
     getLocation: function (success, fail, args, env) {
         ensureAndCreateLocator().done(function (loc) {
             if (loc) {
@@ -128,39 +127,45 @@ module.exports = {
     },
 
     getAuthorizationStatus: function (success, fail, args, env) {
-        ensureAndCreateLocator().done(function (loc) {
-            if (loc) {
-                if (typeof Windows.Devices.Geolocation.Geolocator.requestAccessAsync === 'function') {
-                    Windows.Devices.Geolocation.Geolocator.requestAccessAsync().then(function (result) {
-                        switch (result) {
-                            case Windows.Devices.Geolocation.GeolocationAccessStatus.allowed:
-                                success(1); // Autorizado
-                                break;
-                            case Windows.Devices.Geolocation.GeolocationAccessStatus.denied:
-                                success(2); // No autorizado
-                                break;
-                            case Windows.Devices.Geolocation.GeolocationAccessStatus.unspecified:
-                            default:
-                                success(0); // No determinado
-                                break;
-                        }
-                    }, function (err) {
-                        fail({
-                            code: PositionError.POSITION_UNAVAILABLE,
-                            message: err.message
-                        });
-                    });
-                } else {
-                    // For older versions of Windows that don't require permission checks
-                    success(1); // Assume authorized
+        try {
+            var status = 0; // No determinado
+            if (typeof Windows.Devices.Geolocation.Geolocator !== 'undefined') {
+                var accessStatus = Windows.Devices.Geolocation.Geolocator.locationStatus;
+                switch (accessStatus) {
+                    case Windows.Devices.Geolocation.PositionStatus.ready:
+                        status = 1; // Autorizado
+                        break;
+                    case Windows.Devices.Geolocation.PositionStatus.disabled:
+                        status = 2; // No autorizado
+                        break;
+                    default:
+                        status = 0; // No determinado
+                        break;
                 }
-            } else {
+            }
+            success(status);
+        } catch (e) {
+            fail({
+                code: PositionError.POSITION_UNAVAILABLE,
+                message: e.message
+            });
+        }
+    },
+
+    requestPermission: function (success, fail) {
+        if (typeof Windows.Devices.Geolocation.Geolocator.requestAccessAsync === 'function') {
+            Windows.Devices.Geolocation.Geolocator.requestAccessAsync().then(function () {
+                success(); // Solo indica que la solicitud fue enviada, no retorna status
+            }, function (err) {
                 fail({
                     code: PositionError.POSITION_UNAVAILABLE,
-                    message: 'You do not have the required location services present on your system.'
+                    message: err.message
                 });
-            }
-        }, fail);
+            });
+        } else {
+            // Para versiones antiguas de Windows que no requieren permisos
+            success();
+        }
     },
 
     addWatch: function (success, fail, args, env) {

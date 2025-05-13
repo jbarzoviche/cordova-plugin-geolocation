@@ -212,6 +212,30 @@
     }
 }
 
+- (void)requestPermission:(CDVInvokedUrlCommand*)command
+{
+    NSUInteger authStatus = [self.locationManager authorizationStatus];
+
+    if (authStatus == kCLAuthorizationStatusNotDetermined) {
+        if ([[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationWhenInUseUsageDescription"]) {
+            [self.locationManager requestWhenInUseAuthorization];
+        } else if ([[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationAlwaysUsageDescription"]) {
+            [self.locationManager requestAlwaysAuthorization];
+        } else {
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Falta NSLocationWhenInUseUsageDescription o NSLocationAlwaysUsageDescription en Info.plist"];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+            return;
+        }
+        // Opcional: puedes retornar un OK inmediato, o esperar el cambio de status en el delegate
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Solicitud de permiso enviada"];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    } else {
+        // Ya está autorizado o denegado
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"El permiso ya fue gestionado anteriormente"];
+        [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+    }
+}
+
 - (void)getLocation:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{

@@ -74,6 +74,23 @@ var geolocation = {
     lastPosition: null, // reference to last known (cached) position returned
 
     /**
+     * Solicita el permiso de geolocalización al usuario.
+     *
+     * @param {Function} successCallback    Se llama cuando el permiso es gestionado (1 autorizado, 2 denegado)
+     * @param {Function} errorCallback      Se llama si ocurre un error al solicitar el permiso (opcional)
+     */
+    requestPermission: function (successCallback, errorCallback) {
+        argscheck.checkArgs('fF', 'geolocation.requestPermission', arguments);
+        var fail = function (e) {
+            var err = new PositionError(e.code, e.message);
+            if (errorCallback) {
+                errorCallback(err);
+            }
+        };
+        exec(successCallback, fail, 'Geolocation', 'requestPermission', []);
+    },
+    
+    /**
      * Gets the current authorization status.
      *
      * @param {Function} successCallback    The function to call when the authorization status is available
@@ -90,7 +107,7 @@ var geolocation = {
 
         exec(successCallback, fail, 'Geolocation', 'getAuthorizationStatus', []);
     },
-    
+
     /**
    * Asynchronously acquires the current position.
    *

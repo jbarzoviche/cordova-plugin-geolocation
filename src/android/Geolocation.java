@@ -49,6 +49,8 @@ public class Geolocation extends CordovaPlugin implements OnLocationResultEventL
 
     public static final String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
 
+    private CallbackContext permissionCallbackContext;
+
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
@@ -89,6 +91,9 @@ public class Geolocation extends CordovaPlugin implements OnLocationResultEventL
 
         } else if ("getAuthorizationStatus".equals(action)) {
             getAuthorizationStatus(callbackContext);
+        } else if ("requestPermission".equals(action)) { // NUEVO: Soporte para requestPermission
+            requestPermission(callbackContext);
+
         } else {
             return false;
         }
@@ -105,8 +110,30 @@ public class Geolocation extends CordovaPlugin implements OnLocationResultEventL
         return true;
     }
 
+    public void requestPermission(CallbackContext callbackContext) {
+        if (hasPermission()) {
+            PluginResult result = new PluginResult(PluginResult.Status.OK, 1);
+            callbackContext.sendPluginResult(result);
+        } else {
+            this.permissionCallbackContext = callbackContext;
+            PermissionHelper.requestPermissions(this, 9999, permissions);
+            PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+            result.setKeepCallback(true);
+            callbackContext.sendPluginResult(result);
+        }
+    }
+
     @Override
     public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
+    
+        if (requestCode == 9999 && permissionCallbackContext != null) {
+            int status = (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) ? 1 : 2;
+            PluginResult result = new PluginResult(PluginResult.Status.OK, status);
+            permissionCallbackContext.sendPluginResult(result);
+            permissionCallbackContext = null;
+            return;
+        }
+
         // In case a permission request is cancelled, the permissions and grantResults arrays are empty.
         // We must exit immediately to avoid calling getLocation erroneously.
         if(permissions == null || permissions.length == 0) {
